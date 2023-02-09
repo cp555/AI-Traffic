@@ -1,16 +1,16 @@
 import pandas as pd
 import numpy as np
 from sumolib import checkBinary
-import traci
+# import traci
 import os, sys
 
-#set up SUMO env path
-os.environ['SUMO_HOME'] = '/usr/local/opt/sumo/share/sumo'
-if 'SUMO_HOME' in os.environ:
-        tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
-        sys.path.append(tools)
-else:
-    sys.exit("please declare environment variable 'SUMO_HOME'")
+# #set up SUMO env path
+# os.environ['SUMO_HOME'] = '/usr/local/opt/sumo/share/sumo'
+# if 'SUMO_HOME' in os.environ:
+#         tools = os.path.join(os.environ['SUMO_HOME'], 'tools')
+#         sys.path.append(tools)
+# else:
+#     sys.exit("please declare environment variable 'SUMO_HOME'")
 
 class Network:
 
@@ -18,22 +18,22 @@ class Network:
 
   ## constructor to initialize an network object
   #def __init__(self, traci,fgfilename):
-  def __init__(self,cfgfilename):
+  def __init__(self,cfgfilename,conn):
+    
 
-    #self.traci = traci
     self.geometry = {}
     self.state = {}   #map from link/lane id to number of vehicles
 
-    os.environ['SUMO_HOME'] = '/usr/local/opt/sumo/share/sumo'
-    filepath = "/Users/linkeke/Downloads/sumo/AI-Traffic/network/" + cfgfilename
-    sumoCmd = ["sumo", "-c", filepath]
+    # os.environ['SUMO_HOME'] = '/usr/local/opt/sumo/share/sumo'
+    # filepath = "/Users/cp5/Desktop/sumo_demo/network/" + cfgfilename
+    # sumoCmd = ["sumo", "-c", filepath]
     
-    traci.start(sumoCmd)
+    # traci.start(sumoCmd)
     step = 0
     i = 0
-    LaneID = traci.lane.getIDList()
+    LaneID = conn.lane.getIDList()
     numberOfLan = getLaneNumber(traci.lane.getIDList())
-    traci.trafficlight.setRedYellowGreenState("node1", "rrrrrrrrrrrr")
+    conn.trafficlight.setRedYellowGreenState("node1", "rrrrrrrrrrrr")
 
     list_links = trafficlight_link("node1")
 
@@ -47,12 +47,12 @@ class Network:
     vehicles_lanes = []
     res = []
 
-    traci.simulationStep()
+    # traci.simulationStep()
 
     for x in range(numberOfLan):  
-            each_length = traci.lane.getLength(LaneID[x])  # get current length
+            each_length = conn.lane.getLength(LaneID[x])  # get current length
             length_lanes[LaneID[x]] = each_length          # put into a map
-            links = traci.lane.getLinks(LaneID[x])         # get links list of current lane
+            links = conn.lane.getLinks(LaneID[x])         # get links list of current lane
             if len(links) > 0 and links[0][-2] != 't':     # if it has a list and it's not u-turn
                 lane_pairs[LaneID[x]] = links[0][0] + links[0][-2]    # put it into the map
                 
@@ -72,23 +72,23 @@ class Network:
     self.geometry["length_lanes"] = length_lanes
     self.geometry["light_list"] = light_list
 
-    traci.close(False)
+    # traci.close(False)
     
   def getGeometry(self):
     return self.geometry
 
-  def getState(self):
+  def getState(self,conn):
     vehicle_number_each_lane = {}                # map from lane_id to number of vehicles
     for x in range(self.geometry["numberOfLan"]):  
-        lane_length = traci.lane.getLength(self.geometry["LaneID"][x])                    # extract length and number of
-        total_number = traci.lane.getLastStepVehicleNumber(self.geometry["LaneID"][x])    # vehicles in each lane
+        lane_length = conn.lane.getLength(self.geometry["LaneID"][x])                    # extract length and number of
+        total_number = conn.lane.getLastStepVehicleNumber(self.geometry["LaneID"][x])    # vehicles in each lane
         vehicle_number_each_lane[self.geometry["LaneID"][x]] = total_number
     self.state["vehicle_number_each_lane"] = vehicle_number_each_lane
     return self.state
   
   def applyControl(self,controller):
     RedYellowGreenState = ''.join(str(e) for e in controller)
-    traci.trafficlight.setRedYellowGreenState("node1", RedYellowGreenState)
+    conn.trafficlight.setRedYellowGreenState("node1", RedYellowGreenState)
     self.geometry["light_list"] = controller
      
 
@@ -105,8 +105,8 @@ def getLaneNumber(idList):
 def findItem(theList, item1, item2):
   return [(i) for (i, sub) in enumerate(theList) if item1 and item2 in sub]
 
-def trafficlight_link(junction):
-  links = traci.trafficlight.getControlledLinks(junction)
+def trafficlight_link(junction,conn):
+  links = conn.trafficlight.getControlledLinks(junction)
   out = [item for t in links for item in t]
   list_links = [list(ele) for ele in out]
   for i in range(len(list_links)):
@@ -115,8 +115,8 @@ def trafficlight_link(junction):
 
   return list_links
 
-def trafficlight_light(junction):
-  lights = traci.trafficlight.getRedYellowGreenState("node1")
+def trafficlight_light(junction,conn):
+  lights = conn.trafficlight.getRedYellowGreenState("node1")
   light_list = list(lights)
   # ex:['r', 'r', 'r', 'r', 'r', 'r', 'r', 'r', 'r', 'r', 'r', 'r']
   
@@ -145,6 +145,3 @@ def trafficlight_phase(list_links, light_list):  #putting the link, phase, and l
   return Matrix
 
   
-    
-
-network = Network("test_1110.sumo.cfg")
