@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
 from sumolib import checkBinary
-# import traci
+import traci
 import os, sys
+
 
 # #set up SUMO env path
 # os.environ['SUMO_HOME'] = '/usr/local/opt/sumo/share/sumo'
@@ -18,7 +19,7 @@ class Network:
 
   ## constructor to initialize an network object
   #def __init__(self, traci,fgfilename):
-  def __init__(self,cfgfilename,conn):
+  def __init__(self,cfgfilename):
     
 
     self.geometry = {}
@@ -28,16 +29,18 @@ class Network:
     # filepath = "/Users/cp5/Desktop/sumo_demo/network/" + cfgfilename
     # sumoCmd = ["sumo", "-c", filepath]
     
-    # traci.start(sumoCmd)
+    conn = traci.getConnection("sim1")
+
+    #traci.start(sumoCmd)
     step = 0
     i = 0
     LaneID = conn.lane.getIDList()
-    numberOfLan = getLaneNumber(traci.lane.getIDList())
+    numberOfLan = getLaneNumber(conn.lane.getIDList())
     conn.trafficlight.setRedYellowGreenState("node1", "rrrrrrrrrrrr")
 
-    list_links = trafficlight_link("node1")
+    list_links = trafficlight_link("node1", conn)
 
-    light_list = trafficlight_light("node1")
+    light_list = trafficlight_light("node1", conn)
 
     phase_matrix = trafficlight_phase(list_links, light_list)
 
@@ -86,7 +89,7 @@ class Network:
     self.state["vehicle_number_each_lane"] = vehicle_number_each_lane
     return self.state
   
-  def applyControl(self,controller):
+  def applyControl(self,controller, conn):
     RedYellowGreenState = ''.join(str(e) for e in controller)
     conn.trafficlight.setRedYellowGreenState("node1", RedYellowGreenState)
     self.geometry["light_list"] = controller
