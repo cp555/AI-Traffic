@@ -8,5 +8,11 @@ Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查�
 '''
 #/usr/bin/python
 
-def analysis(metrics):
-    pass
+def updateMetrics(conn,metrics,state,geometry):
+    for lane in geometry["LaneID"]:
+        metrics['WaitingTime'].append(conn.lane.getWaitingTime(lane))
+        metrics['CO2'].append(conn.lane.getCO2Emission(lane))
+            
+    for vehicle in state["vehicleID"]:
+        metrics['TimeLoss'].append(conn.vehicle.getTimeLoss(vehicle))
+    return metrics
