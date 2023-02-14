@@ -25,18 +25,9 @@ class Network:
     self.geometry = {}
     self.state = {}   #map from link/lane id to number of vehicles
 
-    # os.environ['SUMO_HOME'] = '/usr/local/opt/sumo/share/sumo'
-    # filepath = "/Users/cp5/Desktop/sumo_demo/network/" + cfgfilename
-    # sumoCmd = ["sumo", "-c", filepath]
-    
-    #conn = traci.getConnection("sim1")
-
-    #traci.start(sumoCmd)
     step = 0
     i = 0
     LaneID = conn.lane.getIDList()
-    VehicleID = conn.vehicle.getIDList()
-    
     numberOfLan = getLaneNumber(conn.lane.getIDList())
     conn.trafficlight.setRedYellowGreenState("node1", "rrrrrrrrrrrr")
 
@@ -51,8 +42,6 @@ class Network:
     pressure_map = {}   # map from pair of lanes'( one stream)' to pressure
     vehicles_lanes = []
     res = []
-
-    # traci.simulationStep()
 
     for x in range(numberOfLan):  
             each_length = conn.lane.getLength(LaneID[x])  # get current length
@@ -69,7 +58,6 @@ class Network:
 
 
     self.geometry["LaneID"] = LaneID
-    self.geometry["VehicleID"] = VehicleID
     self.geometry["pressure_map"] = pressure_map
     self.geometry["length_lanes"] = length_lanes
     self.geometry["list_links"] = list_links
@@ -77,8 +65,6 @@ class Network:
     self.geometry["numberOfLan"] = numberOfLan
     self.geometry["length_lanes"] = length_lanes
     self.geometry["light_list"] = light_list
-
-    # traci.close(False)
     
   def getGeometry(self):
     return self.geometry
@@ -90,6 +76,8 @@ class Network:
         total_number = conn.lane.getLastStepVehicleNumber(self.geometry["LaneID"][x])    # vehicles in each lane
         vehicle_number_each_lane[self.geometry["LaneID"][x]] = total_number
     self.state["vehicle_number_each_lane"] = vehicle_number_each_lane
+    VehicleID = conn.vehicle.getIDList()
+    self.state["vehicleID"] = VehicleID
     return self.state
   
   def applyControl(self,controller, conn):
