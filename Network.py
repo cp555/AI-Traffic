@@ -19,7 +19,7 @@ class Network:
 
   ## constructor to initialize an network object
   #def __init__(self, traci,fgfilename):
-  def __init__(self,cfgfilename):
+  def __init__(self,cfgfilename, conn):
     
 
     self.geometry = {}
@@ -29,12 +29,14 @@ class Network:
     # filepath = "/Users/cp5/Desktop/sumo_demo/network/" + cfgfilename
     # sumoCmd = ["sumo", "-c", filepath]
     
-    conn = traci.getConnection("sim1")
+    #conn = traci.getConnection("sim1")
 
     #traci.start(sumoCmd)
     step = 0
     i = 0
     LaneID = conn.lane.getIDList()
+    VehicleID = conn.vehicle.getIDList()
+    
     numberOfLan = getLaneNumber(conn.lane.getIDList())
     conn.trafficlight.setRedYellowGreenState("node1", "rrrrrrrrrrrr")
 
@@ -67,6 +69,7 @@ class Network:
 
 
     self.geometry["LaneID"] = LaneID
+    self.geometry["VehicleID"] = VehicleID
     self.geometry["pressure_map"] = pressure_map
     self.geometry["length_lanes"] = length_lanes
     self.geometry["list_links"] = list_links
