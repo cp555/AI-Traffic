@@ -14,16 +14,7 @@ from Controller import dqnController
 import traci
 import os, sys
 import json
-
-def updateMetrics(conn,metrics,state,geometry):
-    for lane in geometry["LaneID"]:
-        metrics['WaitingTime'].append(conn.lane.getWaitingTime(lane))
-        metrics['CO2'].append(conn.lane.getCO2Emission(lane))
-            
-    for vehicle in state["vehicleID"]:
-        metrics['TimeLoss'].append(conn.vehicle.getTimeLoss(vehicle))
-    return metrics
-
+from analysis import updateMetrics 
 
 if __name__ == "__main__":
 
