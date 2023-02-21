@@ -4,9 +4,10 @@ from Network import Network
 from Controller import MaxPressureController
 from Controller import dqnController
 import traci
-import os, sys
+import os
+import sys
 import json
-from analysis import updateMetrics 
+from analysis import updateMetrics
 
 if __name__ == "__main__":
 
@@ -21,8 +22,9 @@ if __name__ == "__main__":
     dir_path = os.path.dirname(os.path.realpath(__file__))
     filepath = os.path.join(dir_path,"network",cfgfilename)
     print(filepath)
+
     sumoCmd = ["sumo", "-c", filepath]
-    #sumoCmd = ["sumo-gui", "-c", filepath]  # if you want to see the simulation
+    # sumoCmd = ["sumo-gui", "-c", filepath]  # if you want to see the simulation
 
     # initialize the network object and controller object
     tracilabel = "sim1"
@@ -31,19 +33,21 @@ if __name__ == "__main__":
 
     network = Network(filepath, conn)
     controller = "max_pressure"
-    if controller_type=="max_pressure":
+    if controller_type == "max_pressure":
         controller = MaxPressureController()
-    else :
+    else:
         controller = dqnController()
 
     step = 0
 
-    metrics = {'WaitingTime':[],'AccumulatedWaitinTime':[],'CO2':[],'TimeLoss':[]}
+    metrics_lane = {}
+    metrics_vehicle = {}
     while conn.simulation.getMinExpectedNumber() > 0:
         conn.simulationStep()
-        if step > 1 and step%30 == 0: 
+        if step > 1 and step % 30 == 0:
 
             # get current state
+
             intersections = list(network.network.keys())
             print("intersections" + str(intersections))
             print("in step " + str(step))
@@ -64,9 +68,21 @@ if __name__ == "__main__":
             print()
            
 
-    
-  
-        ## RUN Data Analysis 
+
+            # write_state_to_file(state)
+            metrics_lane = updateMetrics(
+                step, conn, metrics_lane, state, geometry, key='lane')
+            metrics_vehicle = updateMetrics(
+                step, conn, metrics_vehicle, state, geometry, key='vehicle')
+
+        # RUN Data Analysis
         step += 1
 
+
+    with open("metrics_lane.json", "w") as outfile:
+        json.dump(metrics_lane, outfile)
+    with open("metrics_vehicle.json", "w") as outfile:
+        json.dump(metrics_vehicle, outfile)
+
     traci.close(False)
+
