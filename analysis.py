@@ -9,9 +9,9 @@ Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查�
 # /usr/bin/python
 
 
-def updateMetrics(step, conn, metrics, state, geometry, key):
+def updateMetrics(step, conn, metrics, state, allLaneId, key):
     if key == 'lane':
-        for lane in geometry["LaneID"]:
+        for lane in allLaneId:
             if lane not in metrics:
                 metrics[lane] = {'step': [], 'WaitingTime': [], 'CO2': []}
             metrics[lane]['step'].append(step)

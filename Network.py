@@ -25,9 +25,10 @@ class Network:
     self.geometry = {}
     self.state = {}   #map from link/lane id to number of vehicles
     self.network = {}
+    self.allLaneId = []
     step = 0
     i = 0
-
+    allLaneId = []
     intersections = conn.trafficlight.getIDList()
     for i in range(len(intersections)):
       self.network[intersections[i]] = {"geometry": {}, "state" : {}}
@@ -35,9 +36,10 @@ class Network:
       list_links = trafficlight_link(intersections[i], conn)
 
       LaneID = getLaneID(list_links)
+      for k in range(len(LaneID)):
+        allLaneId.append(LaneID[k])
       numberOfLane = len(LaneID)  
       conn.trafficlight.setRedYellowGreenState(intersections[i], "rrrrrrrrrrrr")
-
 
       light_list = trafficlight_light(intersections[i], conn)
 
@@ -68,6 +70,7 @@ class Network:
       self.network[intersections[i]]["geometry"]["numberOfLane"] = numberOfLane
       self.network[intersections[i]]["geometry"]["length_lanes"] = length_lanes
       self.network[intersections[i]]["geometry"]["light_list"] = light_list
+    self.allLaneId = set(allLaneId)
     
   def getGeometry(self,intersection):
     return self.network[intersection]["geometry"]

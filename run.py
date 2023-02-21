@@ -63,7 +63,7 @@ if __name__ == "__main__":
                 network.applyControl(control,conn,intersection)      
                 
                 #########write_state_to_file(state)   
-                metrics = updateMetrics(conn,metrics,state,geometry)
+                #metrics = updateMetrics(conn,metrics,state,geometry)
             print()
             print()
            
@@ -71,9 +71,9 @@ if __name__ == "__main__":
 
             # write_state_to_file(state)
             metrics_lane = updateMetrics(
-                step, conn, metrics_lane, state, geometry, key='lane')
+                step, conn, metrics_lane, state, network.allLaneId, key='lane')
             metrics_vehicle = updateMetrics(
-                step, conn, metrics_vehicle, state, geometry, key='vehicle')
+                step, conn, metrics_vehicle, state, network.allLaneId, key='vehicle')
 
         # RUN Data Analysis
         step += 1
