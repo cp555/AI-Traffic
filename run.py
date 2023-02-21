@@ -1,11 +1,3 @@
-'''
-Author: sh0829kk 381534335@qq.com
-Date: 2023-02-08 21:57:11
-LastEditors: sh0829kk 381534335@qq.com
-LastEditTime: 2023-02-15 15:59:02
-FilePath: /AI-Traffic/run.py
-Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
-'''
 import pandas as pd
 import numpy as np
 from Network import Network
@@ -22,10 +14,15 @@ if __name__ == "__main__":
     controller_type = "max_pressure"
 
     # LOAD SUMO STUFF
-    cfgfilename = "test_1110.sumo.cfg"  # sys.argv[1]
+    #cfgfilename = "test_1110.sumo.cfg" 
+    cfgfilename = "SUMO_Network.sumocfg"
+
+
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    filepath = os.path.join(dir_path, "network", cfgfilename)
+    filepath = os.path.join(dir_path,"network",cfgfilename)
+    print(filepath)
+
     sumoCmd = ["sumo", "-c", filepath]
     # sumoCmd = ["sumo-gui", "-c", filepath]  # if you want to see the simulation
 
@@ -50,16 +47,27 @@ if __name__ == "__main__":
         if step > 1 and step % 30 == 0:
 
             # get current state
-            state = network.getState(conn)
-            geometry = network.getGeometry()
 
-            # get maxpressure controller
-            control = controller.getController(geometry, state)
+            intersections = list(network.network.keys())
+            print("intersections" + str(intersections))
+            print("in step " + str(step))
+            for i in range(len(intersections)):
+                intersection = intersections[i]
+                state = network.getState(conn,intersection)
+                geometry = network.getGeometry(intersection)
 
-            # update the state of the network
-            network.applyControl(control, conn)
+                # get maxpressure controller
+                control = controller.getController(geometry,state)
+                print("   " + intersection + " light list : " + str(control))
+                # update the state of the network
+                network.applyControl(control,conn,intersection)      
+                
+                #########write_state_to_file(state)   
+                metrics = updateMetrics(conn,metrics,state,geometry)
+            print()
+            print()
+           
 
-            # print('vehicle', network.state["vehicleID"])
 
             # write_state_to_file(state)
             metrics_lane = updateMetrics(
@@ -70,9 +78,11 @@ if __name__ == "__main__":
         # RUN Data Analysis
         step += 1
 
+
     with open("metrics_lane.json", "w") as outfile:
         json.dump(metrics_lane, outfile)
     with open("metrics_vehicle.json", "w") as outfile:
         json.dump(metrics_vehicle, outfile)
 
     traci.close(False)
+

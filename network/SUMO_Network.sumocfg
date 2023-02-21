@@ -1,0 +1,9 @@
+<configuration>
+    <input>
+        <net-file value="SUMO_Network.net.xml"/>
+        <route-files value="0123testing3.rou.xml"/>
+<junction-taz value="true"/>
+    </input>
+	
+
+</configuration>
