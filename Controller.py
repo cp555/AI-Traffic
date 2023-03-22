@@ -1,6 +1,8 @@
 import traci
 from abc import ABC, abstractmethod
- 
+from DQN_Agent import DQNAgent
+
+
 class Controller(ABC):
     @abstractmethod
     def getController(self):
@@ -31,12 +33,13 @@ class MaxPressureController(Controller):
         max_key_list = max_key.split(",")
         max_link = findItem(geometry["list_links"], max_key_list[0], max_key_list[1])  # defind the max prssure link
         max_phase = geometry["phase_matrix"][1][max_link[0]] # defind which phase the max prssure link belonge
-        
+        open_phases = geometry["open_phases_map"][max_phase]
+        print("  open phases ",open_phases)
         coltroller = []
         for i in range(len(geometry["list_links"])):  # reset all light to RED
             coltroller.append('r')
         for i in range(len(geometry["list_links"])):  # change the phase that the max prssure link belonge to GREEN
-            if geometry["phase_matrix"][1][i] == max_phase:
+            if geometry["phase_matrix"][1][i] in open_phases:
                 coltroller[i] = 'G'
         return coltroller
         
@@ -44,6 +47,28 @@ class MaxPressureController(Controller):
 class dqnController(Controller):
     def __init__(self):
         self.c = None
+
+    def getController(self, state, geometry):
+        agent = DQNAgent()
+        action = agent.act(state)
+
+        multi_controller = []
+        
+        T = []
+        T.append(((action//8**0)%8) + 1)
+        T.append(((action//8**1)%8) + 1)
+        T.append(((action//8**2)%8) + 1)
+
+        for i in range(len(geometry["intersections"])):
+            controller = []
+            for x in range(len(geometry["DQN_list_links"][i])):  # reset all light to RED
+                controller.append('r')
+            for x in range(len(geometry["DQN_list_links"][i])):  # change the phase that the max prssure link belonge to GREEN
+                if [geometry["DQN_phase_matrix"][geometry["intersections"][i]][1][x]] == T[i]:
+                    controller[x] = 'G'
+            multi_controller.append(controller)
+
+        return multi_controller, T, action
 
 
 

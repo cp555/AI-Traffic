@@ -3,6 +3,7 @@ import numpy as np
 from sumolib import checkBinary
 import traci
 import os, sys
+import optparse
 
 
 # #set up SUMO env path
@@ -22,9 +23,8 @@ class Network:
   def __init__(self,cfgfilename, conn):
     
 
-    self.geometry = {}
-    self.state = {}   #map from link/lane id to number of vehicles
     self.network = {}
+    self.DQNgeometry = {}
     self.allLaneId = []
     step = 0
     i = 0
@@ -38,7 +38,8 @@ class Network:
       LaneID = getLaneID(list_links)
       for k in range(len(LaneID)):
         allLaneId.append(LaneID[k])
-      numberOfLane = len(LaneID)  
+      numberOfLane = len(LaneID)
+      allnumberofLane = len(set(allLaneId))
       conn.trafficlight.setRedYellowGreenState(intersections[i], "rrrrrrrrrrrr")
 
       light_list = trafficlight_light(intersections[i], conn)
@@ -50,6 +51,7 @@ class Network:
       pressure_map = {}   # map from pair of lanes'( one stream)' to pressure
       vehicles_lanes = []
       res = []
+
 
       for j in range(len(LaneID)):
         each_length = conn.lane.getLength(LaneID[j]) # get current length
@@ -70,8 +72,68 @@ class Network:
       self.network[intersections[i]]["geometry"]["numberOfLane"] = numberOfLane
       self.network[intersections[i]]["geometry"]["length_lanes"] = length_lanes
       self.network[intersections[i]]["geometry"]["light_list"] = light_list
-    self.allLaneId = set(allLaneId)
-    
+      self.network[intersections[i]]["geometry"]["open_phases_map"] = {1:[1,5],2:[2,6],3:[3,7],4:[4,8],5:[1,5],6:[2,6],7:[3,7],8:[4,8]}
+
+    DQN_list_links = []
+    DQN_light_list = []
+    DQN_phase_matrix = {}
+    for i in range(len(intersections)):
+        DQN_list_links.append(trafficlight_link(intersections[i],conn))
+        DQN_light_list.append(trafficlight_light(intersections[i],conn))
+        DQN_phase_matrix[intersections[i]] = trafficlight_phase(DQN_list_links[i], DQN_light_list[i])
+
+    self.allLaneId = list(set(allLaneId))
+    self.allnumberofLane = allnumberofLane
+    self.intersections = intersections
+    self.DQNgeometry["DQN_list_links"] = DQN_list_links
+    self.DQNgeometry["DQN_light_list"] = DQN_light_list
+    self.DQNgeometry["DQN_phase_matrix"] = DQN_phase_matrix
+    self.DQNgeometry["intersections"] = intersections
+  
+  def DQN_getstate(self, conn, action):
+    number_each_lane = {}
+    for x in range(self.allnumberofLane):  
+        total_number = conn.lane.getLastStepVehicleNumber(self.allLaneId[x])
+        number_each_lane[self.allLaneId[x]] = total_number
+            
+    number_each_lane_list = list(number_each_lane.values())            
+
+    DQN_action =[]
+    for x in range(512):   
+        if x == action :
+            DQN_action.append(1)
+        else:
+            DQN_action.append(0)
+
+
+    num_each_lane_arr = np.array(number_each_lane_list)
+    num_each_lane_arr = num_each_lane_arr.reshape(1, 60, 1)
+
+    DQN_action_arr = np.array(DQN_action)
+    DQN_action_arr = DQN_action_arr.reshape(1, 512, 1)
+      
+    return [num_each_lane_arr, DQN_action_arr]
+
+  def getVehicleNum(self, conn):
+    VehicleNum = 0
+    for i in range(self.allnumberofLane):
+        VehicleNum += conn.lane.getLastStepVehicleNumber(self.allLaneId[i])
+
+    return VehicleNum
+
+  def getHaltingNum(self, conn):
+    HaltingNum = 0
+    for i in range(self.allnumberofLane):
+        HaltingNum += conn.lane.getLastStepHaltingNumber(self.allLaneId[i])
+
+    return HaltingNum
+  def get_options(self):
+    optParser = optparse.OptionParser()
+    optParser.add_option("--nogui", action="store_true",
+                            default=False, help="run the commandline version of sumo")
+    options, args = optParser.parse_args()
+    return options
+
   def getGeometry(self,intersection):
     return self.network[intersection]["geometry"]
 
@@ -101,6 +163,8 @@ def getLaneNumber(idList):
       if idList[i][0] != ':':
           res = res + 1
   return res
+
+
 
 def findItem(theList, item1, item2):
   return [(i) for (i, sub) in enumerate(theList) if item1 and item2 in sub]
